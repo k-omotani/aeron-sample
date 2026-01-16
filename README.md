@@ -111,6 +111,3 @@ make docker-down
 | subscriber-driver | Subscriber用 Media Driver |
 | subscriber-app | Subscriber Go アプリ |
 
-## ライセンス
-
-MIT
