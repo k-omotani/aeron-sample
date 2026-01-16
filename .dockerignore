@@ -1,0 +1,6 @@
+bin/
+*.jar
+.git/
+.gitignore
+*.md
+coverage.*

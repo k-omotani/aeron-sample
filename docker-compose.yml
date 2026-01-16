@@ -1,0 +1,96 @@
+services:
+  # ========== Publisher A ==========
+  publisher-a-driver:
+    build:
+      context: .
+      dockerfile: Dockerfile.aeron
+    container_name: publisher-a-driver
+    volumes:
+      - publisher-a-shm:/dev/shm
+    healthcheck:
+      test: ["CMD", "test", "-f", "/dev/shm/aeron/cnc.dat"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+
+  publisher-a-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: publisher
+    container_name: publisher-a-app
+    ports:
+      - "8081:8080"
+    volumes:
+      - publisher-a-shm:/dev/shm
+    depends_on:
+      publisher-a-driver:
+        condition: service_healthy
+    environment:
+      - CHANNEL=aeron:udp?endpoint=subscriber-driver:40123
+    command: ["--addr", ":8080", "--aeron-dir", "/dev/shm/aeron"]
+
+  # ========== Publisher B ==========
+  publisher-b-driver:
+    build:
+      context: .
+      dockerfile: Dockerfile.aeron
+    container_name: publisher-b-driver
+    volumes:
+      - publisher-b-shm:/dev/shm
+    healthcheck:
+      test: ["CMD", "test", "-f", "/dev/shm/aeron/cnc.dat"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+
+  publisher-b-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: publisher
+    container_name: publisher-b-app
+    ports:
+      - "8082:8080"
+    volumes:
+      - publisher-b-shm:/dev/shm
+    depends_on:
+      publisher-b-driver:
+        condition: service_healthy
+    environment:
+      - CHANNEL=aeron:udp?endpoint=subscriber-driver:40123
+    command: ["--addr", ":8080", "--aeron-dir", "/dev/shm/aeron"]
+
+  # ========== Subscriber ==========
+  subscriber-driver:
+    build:
+      context: .
+      dockerfile: Dockerfile.aeron
+    container_name: subscriber-driver
+    volumes:
+      - subscriber-shm:/dev/shm
+    healthcheck:
+      test: ["CMD", "test", "-f", "/dev/shm/aeron/cnc.dat"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+
+  subscriber-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: subscriber
+    container_name: subscriber-app
+    volumes:
+      - subscriber-shm:/dev/shm
+    depends_on:
+      subscriber-driver:
+        condition: service_healthy
+    environment:
+      - CHANNEL=aeron:udp?endpoint=0.0.0.0:40123
+    command: ["--aeron-dir", "/dev/shm/aeron"]
+
+volumes:
+  publisher-a-shm:
+  publisher-b-shm:
+  subscriber-shm:
